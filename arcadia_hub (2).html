@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arcadia Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+  --bg:#0f172a; --panel:#020617; --card:#1e293b; --hover:#334155; --accent:#38bdf8;
+}
+body{margin:0;font-family:Arial, sans-serif;background:var(--bg);color:white;}
+header{background:var(--panel);padding:15px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:22px;font-weight:bold;letter-spacing:2px;}
+nav button{background:none;border:none;color:white;margin:0 8px;font-size:14px;cursor:pointer;}
+nav button:hover{color:var(--accent);}
+.search{padding:6px 10px;border-radius:6px;border:none;outline:none;}
+.section{padding:20px;display:none;}
+.section.active{display:block;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;}
+.card{background:var(--card);padding:15px;border-radius:12px;text-align:center;cursor:pointer;transition:.2s;position:relative;}
+.card:hover{background:var(--hover);transform:scale(1.04);} 
+.star{position:absolute;top:8px;right:10px;font-size:14px;cursor:pointer;color:#94a3b8;}
+.star.active{color:gold;}
+iframe{width:100%;height:75vh;border:none;border-radius:12px;margin-top:15px;}
+.panel{background:var(--card);border-radius:12px;padding:15px;}
+input,select{padding:8px;border-radius:6px;border:none;outline:none;width:100%;margin:5px 0;}
+button.main{background:var(--accent);border:none;padding:10px;border-radius:8px;cursor:pointer;font-weight:bold;}
+.footer{text-align:center;padding:15px;font-size:12px;color:#94a3b8;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Arcadia</div>
+  <input class="search" id="search" placeholder="Search games..." oninput="searchGames()">
+  <nav>
+    <button onclick="showSection('home')">Home</button>
+    <button onclick="showSection('categories')">Categories</button>
+    <button onclick="showSection('favorites')">Favorites</button>
+    <button onclick="showSection('profile')">Profile</button>
+  </nav>
+</header>
+
+<section id="home" class="section active">
+  <h2>All Games</h2>
+  <div class="grid" id="gameGrid"></div>
+</section>
+
+<section id="categories" class="section">
+  <h2>Categories</h2>
+  <div class="grid">
+    <div class="card" onclick="filterCat('Racing')">🏁 Racing</div>
+    <div class="card" onclick="filterCat('Sports')">⚽ Sports</div>
+    <div class="card" onclick="filterCat('Arcade')">🕹 Arcade</div>
+    <div class="card" onclick="filterCat('Shooter')">🎯 Shooter</div>
+    <div class="card" onclick="filterCat('Runner')">🏃 Runner</div>
+  </div>
+</section>
+
+<section id="favorites" class="section">
+  <h2>⭐ Favorites</h2>
+  <div class="grid" id="favGrid"></div>
+</section>
+
+<section id="profile" class="section">
+  <h2>Player Profile</h2>
+  <div class="panel">
+    <label>Username</label>
+    <input id="username" placeholder="Enter name">
+    <button class="main" onclick="saveProfile()">Save</button>
+    <p id="profileInfo"></p>
+  </div>
+</section>
+
+<section id="player" class="section">
+  <button class="main" onclick="showSection('home')">⬅ Back</button>
+  <iframe id="frame"></iframe>
+</section>
+
+<div class="footer">Arcadia Platform © 2026</div>
+
+<script>
+const games = [
+ {name:'Slope',cat:'Runner',url:'https://games.crazygames.com/en_US/slope/index.html'},
+ {name:'1v1.LOL',cat:'Shooter',url:'https://games.crazygames.com/en_US/1v1-lol/index.html'},
+ {name:'Retro Bowl',cat:'Sports',url:'https://games.crazygames.com/en_US/retro-bowl/index.html'},
+ {name:'Drift Boss',cat:'Racing',url:'https://games.crazygames.com/en_US/drift-boss/index.html'},
+ {name:'Moto X3M',cat:'Racing',url:'https://games.crazygames.com/en_US/moto-x3m/index.html'},
+ {name:'Temple Run 2',cat:'Runner',url:'https://games.crazygames.com/en_US/temple-run-2/index.html'},
+ {name:'Stickman Hook',cat:'Arcade',url:'https://games.crazygames.com/en_US/stickman-hook/index.html'},
+ {name:'Shell Shockers',cat:'Shooter',url:'https://games.crazygames.com/en_US/shell-shockers/index.html'},
+ {name:'Basketball Stars',cat:'Sports',url:'https://games.crazygames.com/en_US/basketball-stars/index.html'},
+ {name:'Rooftop Snipers',cat:'Shooter',url:'https://games.crazygames.com/en_US/rooftop-snipers/index.html'}
+];
+
+let favorites = JSON.parse(localStorage.getItem('favorites')||'[]');
+
+function showSection(id){
+ document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+}
+
+function loadGame(url){
+ document.getElementById('frame').src=url;
+ showSection('player');
+}
+
+function render(list=games, target='gameGrid'){
+ const grid=document.getElementById(target); grid.innerHTML='';
+ list.forEach(g=>{
+  const d=document.createElement('div'); d.className='card';
+  const star=document.createElement('div'); star.className='star'; star.innerHTML='★';
+  if(favorites.find(f=>f.name===g.name)) star.classList.add('active');
+  star.onclick=(e)=>{e.stopPropagation();toggleFav(g)};
+  d.innerHTML=g.name; d.appendChild(star);
+  d.onclick=()=>loadGame(g.url);
+  grid.appendChild(d);
+ });
+}
+
+function toggleFav(game){
+ if(favorites.find(f=>f.name===game.name)){
+  favorites=favorites.filter(f=>f.name!==game.name);
+ } else favorites.push(game);
+ localStorage.setItem('favorites',JSON.stringify(favorites));
+ render(); renderFav();
+}
+
+function renderFav(){render(favorites,'favGrid')}
+
+function filterCat(cat){showSection('home');render(games.filter(g=>g.cat===cat))}
+
+function searchGames(){
+ const q=document.getElementById('search').value.toLowerCase();
+ render(games.filter(g=>g.name.toLowerCase().includes(q)));
+}
+
+function saveProfile(){
+ const name=document.getElementById('username').value;
+ localStorage.setItem('username',name);
+ document.getElementById('profileInfo').innerText='Welcome, '+name;
+}
+
+function loadProfile(){
+ const name=localStorage.getItem('username');
+ if(name){document.getElementById('profileInfo').innerText='Welcome, '+name;}
+}
+
+render(); renderFav(); loadProfile();
+</script>
+</body>
+</html>
